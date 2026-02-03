@@ -1,36 +1,41 @@
+// src/app/api/webhook/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import pool from '@/lib/db'; // เรียกใช้ db ที่สร้างเมื่อกี้
 
-// 🧠 ตัวแปรจำค่าชั่วคราว (Memory Cache)
-// หมายเหตุ: บน Vercel ค่านี้อาจจะหายไปถ้าไม่มีการใช้งานนานๆ แต่เพียงพอสำหรับตอนตั้งค่าครับ
-let latestGroupId: string | null = null;
-let latestEventTime: string | null = null;
-
-// 🟢 GET: ให้หน้า Admin มาถามว่า "เจอ Group ID หรือยัง?"
 export async function GET() {
-    return NextResponse.json({
-        groupId: latestGroupId,
-        timestamp: latestEventTime
-    });
+    // ดึงกลุ่มล่าสุดที่เพิ่งเข้ามา (เผื่อ Admin อยากดู)
+    try {
+        const client = await pool.connect();
+        const result = await client.query('SELECT * FROM line_groups ORDER BY added_at DESC LIMIT 1');
+        client.release();
+
+        return NextResponse.json({
+            latestGroup: result.rows[0] || null
+        });
+    } catch (error) {
+        return NextResponse.json({ error: 'DB Error' }, { status: 500 });
+    }
 }
 
-// 🔵 POST: รับข้อมูลจาก LINE (ตอนโดนเชิญเข้ากลุ่ม)
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const events = body.events;
 
-        // วนลูปเช็คทุกเหตุการณ์ที่ส่งมา
         for (const event of events) {
-            // 1. ถ้าเป็น Event "Join" (บอทถูกเชิญเข้ากลุ่ม)
-            // 2. หรือ Event "Message" (มีคนพิมพ์ในกลุ่ม)
+            // เช็คว่าเป็น Group หรือ Room
             if (event.source.type === 'group' || event.source.type === 'room') {
-                const id = event.source.groupId || event.source.roomId;
+                const groupId = event.source.groupId || event.source.roomId;
 
-                // จำค่าไว้!
-                latestGroupId = id;
-                latestEventTime = new Date().toLocaleString('th-TH');
+                // บันทึกลง Neon (ถ้ามีอยู่แล้วไม่ต้องทำอะไรด้วย ON CONFLICT)
+                const client = await pool.connect();
+                await client.query(
+                    'INSERT INTO line_groups (group_id) VALUES ($1) ON CONFLICT (group_id) DO NOTHING',
+                    [groupId]
+                );
+                client.release();
 
-                console.log("🎯 DETECTED GROUP ID:", latestGroupId);
+                console.log("✅ SAVED GROUP ID:", groupId);
             }
         }
 
