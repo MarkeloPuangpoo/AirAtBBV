@@ -1,19 +1,28 @@
 import requests
 import json
 
-# URL เดิม
-url = "https://watch.kid-bright.org/diy/api/scan?datasource=latest_data_by_station&lat=13.504004&lon=101.002182"
+# URL เดิมที่ดึงประวัติ
+url = "https://watch.kid-bright.org/diy/api/get?datasource=history_data_by_station&id=781C3CA55E54"
 
 try:
-    response = requests.get(url)
-    data = response.json()
+    print("🔍 กำลังดึงข้อมูลดิบ...")
+    response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
     
-    if len(data) > 0:
-        print("🔍 ตัวอย่างข้อมูลดิบ (Station แรก):")
-        # สั่งปริ้นท์โครงสร้าง JSON ออกมาดูตรงๆ เลย
-        print(json.dumps(data[0], indent=4, ensure_ascii=False))
+    if response.status_code == 200:
+        data = response.json()
+        
+        # เช็คว่าเป็น List หรือ Dictionary
+        if isinstance(data, list):
+            print(f"📦 ได้ข้อมูลมาเป็น List จำนวน: {len(data)} รายการ")
+            if len(data) > 0:
+                print("\n--- ตัวอย่างข้อมูลตัวแรก (Raw) ---")
+                print(json.dumps(data[0], indent=4, ensure_ascii=False))
+        else:
+            print("📦 ได้ข้อมูลมาเป็น Dictionary")
+            print(json.dumps(data, indent=4, ensure_ascii=False))
+            
     else:
-        print("ไม่พบข้อมูลสถานี")
+        print("❌ Error:", response.status_code)
 
 except Exception as e:
     print("Error:", e)

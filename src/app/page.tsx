@@ -9,12 +9,14 @@ import HealthRecommendations from "@/components/dashboard/HealthRecommendations"
 import { MapPin } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 import LanguageToggle from "@/components/LanguageToggle";
+import HistorySection from "@/components/dashboard/HistorySection";
 import Image from "next/image";
 
 // Initial empty state or loading state
 function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [stationData, setStationData] = useState<StationData | null>(null);
+  const [historyData, setHistoryData] = useState<any[]>([]); // New State
   const { t } = useLanguage();
   const [timeStr, setTimeStr] = useState<string>("");
 
@@ -60,8 +62,19 @@ function DashboardContent() {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch('/api/school-history');
+      const data = await res.json();
+      if (!data.error && Array.isArray(data)) {
+        setHistoryData(data);
+      }
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => {
     fetchRealData();
+    fetchHistory();
     const interval = setInterval(fetchRealData, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -153,6 +166,11 @@ function DashboardContent() {
 
           </section>
         </div>
+
+        {/* History Section (NEW!) */}
+        <section className="pt-8 border-t border-slate-200/50">
+          <HistorySection data={historyData} />
+        </section>
 
         {/* Footer */}
         <footer className="flex justify-center mt-12">

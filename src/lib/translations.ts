@@ -18,6 +18,19 @@ export interface Translation {
     health_desc_moderate: string;
     health_title_unhealthy: string;
     health_desc_unhealthy: string;
+
+    // History
+    history_title: string;
+    history_pm25_btn: string;
+    history_temp_btn: string;
+    history_table_date: string;
+    history_table_aq: string;
+    history_table_pm25: string;
+    history_table_temp: string;
+    history_table_humid: string;
+    history_status_good: string;
+    history_status_moderate: string;
+    history_status_unhealthy: string;
 }
 
 export const translations: Record<Language, Translation> = {
@@ -50,6 +63,19 @@ export const translations: Record<Language, Translation> = {
 
         health_title_unhealthy: "คำเตือนสุขภาพ",
         health_desc_unhealthy: "ควรหลีกเลี่ยงกิจกรรมกลางแจ้ง สวมหน้ากากป้องกันหากจำเป็นต้องออกนอกอาคาร ปิดหน้าต่างกันฝุ่น",
+
+        // History
+        history_title: "📊 คลังข้อมูลย้อนหลัง",
+        history_pm25_btn: "ฝุ่น PM2.5",
+        history_temp_btn: "อุณหภูมิ",
+        history_table_date: "วันที่",
+        history_table_aq: "คุณภาพอากาศ",
+        history_table_pm25: "PM2.5",
+        history_table_temp: "อุณหภูมิ",
+        history_table_humid: "ความชื้น",
+        history_status_good: "อากาศดี",
+        history_status_moderate: "ปานกลาง",
+        history_status_unhealthy: "เริ่มมีผล",
     },
     en: {
         // Header
@@ -80,5 +106,18 @@ export const translations: Record<Language, Translation> = {
 
         health_title_unhealthy: "Health Warning",
         health_desc_unhealthy: "Avoid outdoor activities. Wear a mask if you must go outside. Keep windows closed.",
+
+        // History
+        history_title: "📊 History Archive",
+        history_pm25_btn: "PM2.5",
+        history_temp_btn: "Temperature",
+        history_table_date: "Date",
+        history_table_aq: "Air Quality",
+        history_table_pm25: "PM2.5",
+        history_table_temp: "Temp",
+        history_table_humid: "Humidity",
+        history_status_good: "Good",
+        history_status_moderate: "Moderate",
+        history_status_unhealthy: "Unhealthy",
     }
 };

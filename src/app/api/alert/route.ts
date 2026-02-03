@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 
 // ✅ ผมใส่ Token ที่คุณหามาให้แล้วครับ
-const LINE_ACCESS_TOKEN = 'Ac1+39XWUJddVR/77UQ8307Ju4ArO+ZkVtxHoN+iMwMQ6AtCV4uurfLqd5Y8ukWmaXQ4T6+nFXZ4et2Cwdha3XMR5niNLXew/5GFkwKU9yniN0poBQYjojg6Q13TAgYnYi9oIz+euiR6pixU9yk/RQdB04t89/1O/w1cDnyilFU=';
+// ✅ ใช้ process.env เพื่อความปลอดภัย
+const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN;
 
 // ❗ [ต้องแก้ตรงนี้] ไปเอา User ID จากหน้า Basic settings มาใส่ (ขึ้นต้นด้วย U...)
-const USER_ID = 'U72fbfb797c17f698dcd55412bfd8c602';
+const USER_ID = process.env.LINE_USER_ID || '';
 
 const getStatus = (pm25: number) => {
     if (pm25 <= 25) return { color: "#10b981", text: "อากาศดีเยี่ยม 🌳", bg: "#ecfdf5" };

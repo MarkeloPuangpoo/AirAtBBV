@@ -11,12 +11,23 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(false);
     const [alertStatus, setAlertStatus] = useState<{ success?: boolean; message?: string } | null>(null);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (password === "spa2568") {
-            setIsAuthenticated(true);
-        } else {
-            alert("รหัสผ่านไม่ถูกต้อง!");
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                setIsAuthenticated(true);
+            } else {
+                alert("รหัสผ่านไม่ถูกต้อง!");
+            }
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการตรวจสอบรหัสผ่าน");
         }
     };
 
