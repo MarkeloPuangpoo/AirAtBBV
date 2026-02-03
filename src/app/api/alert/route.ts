@@ -97,7 +97,7 @@ export async function GET() {
                             contents: [
                                 {
                                     type: "button",
-                                    action: { type: "uri", label: "ดู Dashboard เต็ม", uri: "https://school-air.vercel.app" }, // แก้เป็นลิงก์เว็บจริงของคุณเมื่อ Deploy แล้ว
+                                    action: { type: "uri", label: "ดู Dashboard เต็ม", uri: "https://airatbbv.vercel.app" }, // แก้เป็นลิงก์เว็บจริงของคุณเมื่อ Deploy แล้ว
                                     style: "primary",
                                     color: theme.color
                                 }
