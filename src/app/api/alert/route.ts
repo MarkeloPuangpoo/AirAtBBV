@@ -1,11 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// ✅ ผมใส่ Token ที่คุณหามาให้แล้วครับ
-// ✅ ใช้ process.env เพื่อความปลอดภัย
 const LINE_ACCESS_TOKEN = process.env.LINE_ACCESS_TOKEN;
-
-// ❗ [ต้องแก้ตรงนี้] ไปเอา User ID จากหน้า Basic settings มาใส่ (ขึ้นต้นด้วย U...)
-const USER_ID = process.env.LINE_USER_ID || '';
+// รับ ID จาก Env เป็นค่า Default (สำหรับ Cron Job)
+const DEFAULT_USER_ID = process.env.LINE_USER_ID || '';
 
 const getStatus = (pm25: number) => {
     if (pm25 <= 25) return { color: "#10b981", text: "อากาศดีเยี่ยม 🌳", bg: "#ecfdf5" };
@@ -14,12 +11,23 @@ const getStatus = (pm25: number) => {
     return { color: "#ef4444", text: "อันตราย งดกิจกรรม 🚨", bg: "#fef2f2" };
 };
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        // 1. ดึงข้อมูลจริงจากเซนเซอร์โรงเรียน
+        // 1. รับ targetId จาก URL (ถ้ามี) -> มาจากการกดปุ่ม Test ใน Admin
+        const { searchParams } = new URL(req.url);
+        const customTargetId = searchParams.get('targetId');
+
+        // ถ้ามี Admin กด Test ให้ใช้ ID นั้น, ถ้าไม่มี (Auto) ให้ใช้ Default
+        const TARGET_ID = customTargetId || DEFAULT_USER_ID;
+
+        if (!TARGET_ID) {
+            return NextResponse.json({ error: 'No Target ID provided' }, { status: 400 });
+        }
+
+        // 2. ดึงข้อมูลจากเซนเซอร์
         const LAT = '13.504004';
         const LON = '101.002182';
-        const TARGET_STATION_ID = '781C3CA55E54'; // โรงเรียนบางปะกง
+        const TARGET_STATION_ID = '781C3CA55E54';
 
         const kbRes = await fetch(`https://watch.kid-bright.org/diy/api/scan?datasource=latest_data_by_station&lat=${LAT}&lon=${LON}`, { cache: 'no-store' });
         const stations = await kbRes.json();
@@ -31,9 +39,15 @@ export async function GET() {
         const temp = myStation.data['temp']?.current ?? 0;
         const theme = getStatus(pm25);
 
-        // 2. สร้างการ์ด Flex Message
+        // ✅✅✅ เงื่อนไขกลับมาแล้วครับ! ✅✅✅
+        // แปลว่า: "ถ้าฝุ่นน้อยกว่า 50" AND "ไม่ใช่การทดสอบจาก Admin" -> ให้หยุดส่ง
+        if (pm25 < 50 && !customTargetId) {
+            return NextResponse.json({ message: 'อากาศดี ไม่ต้องแจ้งเตือน (Saved Quota)', pm25: pm25 });
+        }
+
+        // 3. เตรียมข้อความ Flex Message
         const messagePayload = {
-            to: USER_ID,
+            to: TARGET_ID,
             messages: [
                 {
                     type: "flex",
@@ -45,8 +59,8 @@ export async function GET() {
                             type: "box",
                             layout: "vertical",
                             contents: [
-                                { type: "text", text: "LOMbbv", color: "#ffffffaa", size: "xs", weight: "bold" },
-                                { type: "text", text: "รายงานสภาพอากาศ", color: "#ffffff", size: "lg", weight: "bold" }
+                                { type: "text", text: "LOMbbv REPORT", color: "#ffffffaa", size: "xs", weight: "bold" },
+                                { type: "text", text: "โรงเรียนบางปะกงฯ", color: "#ffffff", size: "lg", weight: "bold" }
                             ],
                             backgroundColor: theme.color,
                             paddingAll: "20px"
@@ -97,7 +111,7 @@ export async function GET() {
                             contents: [
                                 {
                                     type: "button",
-                                    action: { type: "uri", label: "ดู Dashboard เต็ม", uri: "https://airatbbv.vercel.app" }, // แก้เป็นลิงก์เว็บจริงของคุณเมื่อ Deploy แล้ว
+                                    action: { type: "uri", label: "ดู Dashboard เต็ม", uri: "https://airatbbv.vercel.app" }, // ✅ ใช้ Link จริง
                                     style: "primary",
                                     color: theme.color
                                 }
@@ -108,12 +122,7 @@ export async function GET() {
             ]
         };
 
-        // เพิ่มเงื่อนไขตรงนี้: ถ้า PM2.5 ไม่ถึง 50 ให้จบการทำงานเลย (ไม่ส่ง LINE)
-        if (pm25 < 50) {
-            return NextResponse.json({ message: 'อากาศดี ไม่ต้องแจ้งเตือน', pm25: pm25 });
-        }
-
-        // 3. ส่งเข้า LINE
+        // 4. ยิง API เข้า LINE
         const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
             method: 'POST',
             headers: {
@@ -128,7 +137,7 @@ export async function GET() {
             return NextResponse.json({ error: 'Line API Error', details: errorText }, { status: 500 });
         }
 
-        return NextResponse.json({ success: true, pm25: pm25 });
+        return NextResponse.json({ success: true, pm25: pm25, target: TARGET_ID });
 
     } catch (error) {
         console.error(error);
