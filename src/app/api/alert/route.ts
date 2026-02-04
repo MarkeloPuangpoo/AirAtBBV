@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         const stations = await kbRes.json();
         const myStation = stations.find((s: any) => s?.meta?._key === TARGET_STATION_ID || s?._profile?.station_id === TARGET_STATION_ID);
 
-        if (!myStation) return NextResponse.json({ error: 'Station not found' });
+        if (!myStation) return NextResponse.json({ error: 'Station not found' }, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 
         const pm25 = myStation.data['pm2.5']?.current ?? 0;
         const temp = myStation.data['temp']?.current ?? 0;
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
         // 2. เช็คเงื่อนไขฝุ่น (ถ้าฝุ่นน้อยกว่า 50 และไม่ใช่การเทส -> ไม่ส่ง)
         if (pm25 < 50 && !customTargetId) {
-            return NextResponse.json({ message: 'อากาศดี ไม่ต้องแจ้งเตือน (Saved Quota)', pm25: pm25 });
+            return NextResponse.json({ message: 'อากาศดี ไม่ต้องแจ้งเตือน (Saved Quota)', pm25: pm25 }, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
         }
 
         // 3. เตรียม Payload ของ Flex Message (ใช้โครงสร้างเดิม)
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
             const allGroupIds = result.rows.map(row => row.group_id);
 
             if (allGroupIds.length === 0) {
-                return NextResponse.json({ message: 'No groups found in database' });
+                return NextResponse.json({ message: 'No groups found in database' }, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
             }
 
             // B2. ส่ง Multicast (LINE รับได้ทีละ 500 IDs, ถ้ามีเยอะกว่านี้อาจต้อง loop แบ่ง array)
@@ -154,10 +154,10 @@ export async function GET(req: NextRequest) {
             responseData = await res.json();
         }
 
-        return NextResponse.json({ success: true, pm25: pm25, lineResponse: responseData });
+        return NextResponse.json({ success: true, pm25: pm25, lineResponse: responseData }, { headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal Error' }, { status: 500, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
     }
 }
